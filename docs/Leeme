@@ -1,0 +1,19 @@
+Proyecto Figure Out - Etapa 1
+Ver. 1.2.1
+
+Autores: Rodrigo Miranda, Adolfo Cañoles, Elliot Ide
+Ultima actualizacion: 05/12/2016 10:02:50
+
+Keys:
++---------------------------------+	     
+|    <Accion>    |     Tecla      |
++----------------+----------------+
+|    <Saltar>    |   Backspace    |
+|    <Inicio>    |     Enter      |
+|    <Pausa>     |       P        |  
+|    < <-- >     |       A	  |	
+|    < --> >     |       D        |  
+|   <updt-cam>   |       F        |
++----------------+----------------+ 
+
+ref: http://jsfiddle.net/LyM87 //source del salto
