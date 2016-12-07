@@ -1,0 +1,29 @@
+Proyecto Figure Out - Etapa 1
+Ver. 1.2.2
+
+Autores: Rodrigo Miranda, Adolfo Cañoles, Elliot Ide
+Ultima actualizacion: 07/12/2016 01:12:15
+
+Keys:
++---------------------------------+	     
+|     Accion     |     Tecla      |
++----------------+----------------+
+|    <Saltar>    |   Backspace    |
+|    <Inicio>    |     Enter      |
+|    <Pausa>     |       P        |  
+|    < <-- >     |       A	  |	
+|    < --> >     |       D        |  
+|   <updt-cam>   |       F        |
++----------------+----------------+ 
+
+Modalidad de juego: Para iniciar aprete enter, y muevase hacia la derecha e izquierda con A y D respectivamente intentando evadir los obstaculos (cubos) y conseguir la mayor cantidad de monedas y vidas.
+
+Camara:
+Existen 2 "tipos" de camara en el juego:
+  -Camara 1: La camara que se utiliza en conjunto con la interaccion de teclado (source 05_virtual_camera).
+  -Camara 2: La camara para desplazarse en el entorno, que utiliza parametros sen y cos (source 10-texture-earth).
+  	     Se controla con i,j,k,l (arriba, izda, dere, abajo) y el resto de las teclas siguen de la misma forma.
+
+*Tip: pruebe acercandose mucho a una orilla.
+
+ref: http://jsfiddle.net/LyM87 //src del salto

@@ -8,6 +8,9 @@
 #include <assimp/postprocess.h> // various extra operations
 #include "maths_funcs.h"
 #include "gl_utils.h"
+#include "tools.h"
+
+#define PI 3.14159265359
 
 bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	const aiScene* scene = aiImportFile (file_name, aiProcess_Triangulate);
@@ -21,19 +24,19 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	printf ("  %i materials\n", scene->mNumMaterials);
 	printf ("  %i meshes\n", scene->mNumMeshes);
 	printf ("  %i textures\n", scene->mNumTextures);
-	
+
 	/* get first mesh in file only */
 	const aiMesh* mesh = scene->mMeshes[0];
 	printf ("    %i vertices in mesh[0]\n", mesh->mNumVertices);
-	
+
 	/* pass back number of vertex points in mesh */
 	*point_count = mesh->mNumVertices;
-	
+
 	/* generate a VAO, using the pass-by-reference parameter that we give to the
 	function */
 	glGenVertexArrays (1, vao);
 	glBindVertexArray (*vao);
-	
+
 	/* we really need to copy out all the data from AssImp's funny little data
 	structures into pure contiguous arrays before we copy it into data buffers
 	because assimp's texture coordinates are not really contiguous in memory.
@@ -67,7 +70,7 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 			texcoords[i * 2 + 1] = (GLfloat)vt->y;
 		}
 	}
-	
+
 	/* copy mesh data into VBOs */
 	if (mesh->HasPositions ()) {
 		GLuint vbo;
@@ -114,18 +117,15 @@ bool load_mesh (const char* file_name, GLuint* vao, int* point_count) {
 	if (mesh->HasTangentsAndBitangents ()) {
 		// NB: could store/print tangents here
 	}
-	
+
 	aiReleaseImport (scene);
 	printf ("mesh loaded\n");
-	
+
 	return true;
 }
 
-//funcion que inicializa parametros de opengl
-void init(){
-	int g_gl_width = 1280;
-	int g_gl_height = 690;
-	GLFWwindow* g_window = NULL;
+/* Funcion que inicializa parametros basicos de OpenGL */
+void init(int width, int height){
 	restart_gl_log ();
 	start_gl ();
 	glEnable (GL_DEPTH_TEST); // enable depth-testing
@@ -134,57 +134,50 @@ void init(){
 	glCullFace (GL_BACK); // cull back face
 	glFrontFace (GL_CCW); // set counter-clock-wise VERTEX_SHADER_FILE order to mean the front
 	glClearColor (1.0, 1.0, 1.0, 1.0); // grey background to help spot mistakes
-	glViewport (0, 0, g_gl_width, g_gl_height);
+	glViewport (0, 0, width, height);
 }
 
-//funcion que cubre los aspectos de la camara
+/* Funcion que cubre los aspectos de la camara */
 bool gameplay(float cam_speed, double elapsed_seconds, float *cam_pos, float *cam_yaw, float cam_yaw_speed){
- 
-    bool cam_moved = false;
-
-	if (glfwGetKey (g_window, GLFW_KEY_A)){
-		cam_pos[0] -= 3*cam_speed * elapsed_seconds;
-		cam_moved = true;
-	}
-	
-	if (glfwGetKey (g_window, GLFW_KEY_D)){
-		cam_pos[0] += 3*cam_speed * elapsed_seconds;
-		cam_moved = true;
+  bool cam_moved = false;
+	float ryaw = *cam_yaw*PI/180.0;
+	if (glfwGetKey (g_window, GLFW_KEY_J)) {
+			cam_pos[0] -= cos(ryaw)* cam_speed * elapsed_seconds;
+			cam_pos[2] += sin(ryaw)* cam_speed * elapsed_seconds;
+			cam_moved = true;
 	}
 
-	if (glfwGetKey (g_window, GLFW_KEY_PAGE_UP)){
-		cam_pos[1] += cam_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_L)) {
+			cam_pos[0] += cos(ryaw)* cam_speed * elapsed_seconds;
+			cam_pos[2] -= sin(ryaw)* cam_speed * elapsed_seconds;
+			cam_moved = true;
+
 	}
-
-	if (glfwGetKey (g_window, GLFW_KEY_PAGE_DOWN)){
-		cam_pos[1] -= cam_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_PAGE_UP)) {
+			cam_pos[1] += cam_speed * elapsed_seconds;
+			cam_moved = true;
 	}
-
-	if (glfwGetKey (g_window, GLFW_KEY_W)){
-		cam_pos[2] -= 3*cam_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_PAGE_DOWN)) {
+			cam_pos[1] -= cam_speed * elapsed_seconds;
+			cam_moved = true;
 	}
-
-	if (glfwGetKey (g_window, GLFW_KEY_S)){
-		cam_pos[2] += cam_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_I)) {
+			cam_pos[0] -= sin(ryaw)* cam_speed * elapsed_seconds;
+			cam_pos[2] -= cos(ryaw)* cam_speed * elapsed_seconds;
+			cam_moved = true;
 	}
-
-	if (glfwGetKey (g_window, GLFW_KEY_LEFT)){
-		*cam_yaw += cam_yaw_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_K)) {
+			cam_pos[0] += sin(ryaw)* cam_speed * elapsed_seconds;
+			cam_pos[2] += cos(ryaw)* cam_speed * elapsed_seconds;
+			cam_moved = true;
 	}
-
-	if (glfwGetKey (g_window, GLFW_KEY_RIGHT)){
-		*cam_yaw -= cam_yaw_speed * elapsed_seconds;
-		cam_moved = true;
+	if (glfwGetKey (g_window, GLFW_KEY_LEFT)) {
+			*cam_yaw += cam_yaw_speed * elapsed_seconds;
+			cam_moved = true;
 	}
-
-    return cam_moved;
-}
-
-int score(float cam_pos2){
-	
+	if (glfwGetKey (g_window, GLFW_KEY_RIGHT)) {
+			*cam_yaw -= cam_yaw_speed * elapsed_seconds;
+			cam_moved = true;
+	}
+	return cam_moved;
 }
