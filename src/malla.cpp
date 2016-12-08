@@ -11,7 +11,7 @@
 
 using namespace std;
 malla::malla(char* filename){ //constructor que se llama cuando se crea un nuevo objeto de la clase
-	vec3 pos = vec3(0,0,0);//malla
+	vec3 pos = vec3(0,0,0);
 	this->filename = filename;
 	assert(load_mesh(filename, &vao, &numvertices));
 }
@@ -53,5 +53,3 @@ void malla::setpos(vec3 p){
 void malla::setfilename(char *filename){
 	this->filename = filename;
 }
-
-

@@ -23,6 +23,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string>
+#include <time.h>
 #include "maths_funcs.h"
 #include "gl_utils.h"
 #include "tools.h"
@@ -35,11 +36,11 @@
 #define GL_LOG_FILE "log/gl.log"
 #define VERTEX_SHADER_FILE "shaders/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shaders/test_fs.glsl"
-#define num_obstaculos 3 //macros
+#define num_personajes 1
+#define num_obstaculos 8 //macros
+#define num_piso 3
 #define num_monedas 1
 #define num_corazones 1
-#define num_personajes 1
-#define num_piso 1
 
 // keep track of window size for things like the viewport and the mouse cursor
 int g_gl_width = 1280;
@@ -48,9 +49,15 @@ GLFWwindow* g_window = NULL;
 
 /* Definicion previa de la ubicacion de los objetos */
 vec3 pos_obstaculos[] = {
-	vec3 (1.5, -0.15, 2.5),
-	vec3 (-2.0, -0.15, 3.75),
-	vec3 (-1.25, -0.15, 3.75)
+	vec3 (0.0, 0.0, -0.9),
+	vec3 (0.9, 0.0, -0.18),
+	vec3 (0.9, 0.0, -3.0), //aqui buscar como hacer que vayan vair
+	vec3 (0.6, 0.0, -6.0),
+	vec3 (-0.3, 0.0, -6.0),
+	vec3 (0.9, 0.0, -9.0),
+	vec3 (0.6, 0.0, -12.0),
+	vec3 (0.0, 0.0, -15.0)
+
 };
 
 vec3 pos_monedas[] = {
@@ -58,29 +65,44 @@ vec3 pos_monedas[] = {
 };
 
 vec3 pos_piso[] = {
-	vec3(0.0,-0.35,-0.15)
+	vec3(0.0,0.0, 0.0),
+	vec3(0.0,0.0, -15.0),
+	vec3(0.0,0.0, -30.0)
 };
 
-vec3 pos_corazones[] = {
+/*vec3 pos_corazones[] = {
 	vec3(2.0,0.2,5.0)
 };
 
 vec3 pos_personaje[] = {
-	vec3(0.0,-0.15,5.75)
-};
+	vec3(0.0,0.0,0.0)
+};*/
 
 int main(){
 	init(g_gl_width, g_gl_height); /* Define elementos basicos de OpenGL, se ubica en tools.cpp */
 
+	float x = 0.0f;
+	float y = 0.0f;
+	srand (static_cast <unsigned> (time(0)));
+ 	x = -1.95 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(3.9)));
+ 	y= -1.95 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(3.9)));
+	printf("numero random: %f\n %f\n", x, y);
+
 	/* Creacion de Objetos */
 	personaje *p1 = new personaje((char*)"mallas/personaje.obj");
-	obstaculo *o [num_obstaculos]; /* Arreglo de objetos obstaculo */
+
+	obstaculo *o [num_obstaculos]; //arreglo de objetos tipo obstaculo
 	for (int i = 0; i < num_obstaculos; i++){
 		o[i] = new obstaculo((char*)"mallas/obstaculo.obj");
 	}
+
+	piso *f [num_piso]; //arreglo de objetos tipo piso
+	for(int i = 0; i < num_piso; i++){
+		f[i] = new piso((char*)"mallas/piso.obj");
+	}
+
 	moneda *m1 = new moneda((char*)"mallas/moneda.obj");
   corazon *c1 = new corazon((char*)"mallas/corazon.obj");
-  piso *f1 = new piso((char*)"mallas/piso.obj");
 
 //-------------------------------CREATE SHADERS-------------------------------
 	GLuint shader_programme = create_programme_from_files (
@@ -112,7 +134,7 @@ int main(){
 
 	float cam_speed = 1.0f; //1.0 unites per second
 	float cam_yaw_speed = 30.0f; // 30 degrees per second
-	float cam_pos[] = {0.0f, 0.1f, 7.5f}; // orig 0.0, 0.0, 5.0 - don't start at zero, or we will be too close
+	float cam_pos[] = {0.0f, 0.5f, 1.55f}; // orig 0.0, 0.0, 5.0 - don't start at zero, or we will be too close
 	float cam_yaw = 0.0f; // y-rotation in degrees
 	mat4 T = translate (identity_mat4 (), vec3 (-cam_pos[0], -cam_pos[1], -cam_pos[2]));
 	mat4 R = rotate_y_deg (identity_mat4 (), -cam_yaw);
@@ -131,14 +153,24 @@ int main(){
 	//la instruccion de arriba nos permite pasar matrices al shader
 
 	/* Ajustes en las matrices de cada objeto, cambio de ubicacion, scale, etc. */
-	p1->M = translate (identity_mat4(), pos_personaje[0]);
+	p1->M = identity_mat4();
+
+	for(int i = 0; i < num_obstaculos; i++){
+		o[i]->M = translate(identity_mat4(), pos_obstaculos[i]);
+	}
+
+	for(int i = 0; i < num_piso; i++){
+		f[i]->M = translate(identity_mat4(), pos_piso[i]);
+	}
+
+	/*p1->M = translate (identity_mat4(), pos_personaje[0]);
 	for(int i = 0; i < num_obstaculos; i++){
 		o[i]->M = translate(identity_mat4(), pos_obstaculos[i]);
 	}
 	m1->M = translate (identity_mat4(), pos_monedas[0]);
 	c1->M = translate (identity_mat4(), pos_corazones[0]);
 	f1->M = scale (f1->M, vec3(5.0,0.0,15.0));
-	f1->M = translate (identity_mat4(), pos_piso[0]);
+	f1->M = translate (identity_mat4(), pos_piso[0]);*/
 
 	while (!glfwWindowShouldClose (g_window)) {
 		static double previous_seconds = glfwGetTime ();
@@ -160,24 +192,22 @@ int main(){
 
 		for(int i = 0; i < num_obstaculos; i++){
 			glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, o[i]->M.m);
-      glBindVertexArray(o[i]->getvao());
-      glDrawArrays(GL_TRIANGLES,0,o[i]->getnumvertices());
+			glBindVertexArray(o[i]->getvao());
+			glDrawArrays(GL_TRIANGLES,0,o[i]->getnumvertices());
 		}
 
-		glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, m1->M.m);
+		for(int i = 0; i < num_piso; i++){
+			glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, f[i]->M.m);
+      glBindVertexArray(f[i]->getvao());
+      glDrawArrays(GL_TRIANGLES,0,f[i]->getnumvertices());
+		}
+
+		/*glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, m1->M.m);
     glBindVertexArray(m1->getvao());
-    glDrawArrays(GL_TRIANGLES,0,m1->getnumvertices());
-
-		glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, c1->M.m);
-    glBindVertexArray(c1->getvao());
-    glDrawArrays(GL_TRIANGLES,0,c1->getnumvertices());
-
-    glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, f1->M.m);
-   	glBindVertexArray(f1->getvao());
-    glDrawArrays(GL_TRIANGLES,0,f1->getnumvertices());
+    glDrawArrays(GL_TRIANGLES,0,m1->getnumvertices());*/
 
 		// update other events like input handling
-		glfwPollEvents ();
+		glfwPollEvents();
 
 		//llamada a funcion gameplay que controla a la camara2, se ubica en tools.cpp
 	  bool cam_moved = gameplay(cam_speed, elapsed_seconds, cam_pos, &cam_yaw, cam_yaw_speed);
@@ -187,9 +217,9 @@ int main(){
 			if(start){
 				cam_pos[0] -= 3*cam_speed * elapsed_seconds;
 				p1->M.m[12] -= 0.05f;
-				if (p1->M.m[12]< -2.30f && p1->M.m[12]> -2.40f){ //portal A <-
-					cam_pos[0] = 2.10f;
-					p1->M.m[12] = 2.10f;
+				if (p1->M.m[12]< -2.10f && p1->M.m[12]> -2.25f){ //portal A <-
+					cam_pos[0] = 1.95f;
+					p1->M.m[12] = 1.95f;
 				}
 				cam_moved = true;
 			}
@@ -199,9 +229,9 @@ int main(){
 			if(start){
 				cam_pos[0] += 3*cam_speed * elapsed_seconds;
 				p1->M.m[12] += 0.05f;
-				if (p1->M.m[12]> 2.30f && p1->M.m[12]<2.40f){//portal B ->
-					cam_pos[0] = -2.10f;
-					p1->M.m[12] = -2.10f;
+				if (p1->M.m[12]> 2.10f && p1->M.m[12]<2.25f){//portal B ->
+					cam_pos[0] = -1.95f;
+					p1->M.m[12] = -1.95f;
 				}
 				cam_moved = true;
 			}
@@ -210,16 +240,13 @@ int main(){
 		//pausa
 		if (glfwGetKey (g_window, GLFW_KEY_P)) {
 			if(start) start = false;
-
-			else if((!start) && cam_pos[2]<6.0f && cam_pos[2]>-5.0f) start = true;
+			else if((!start) && p1->M.m[14]< 0.0f && p1->M.m[14]> -45.0f) start = true;
 		}
 
 		if (glfwGetKey (g_window, GLFW_KEY_F)){//update-camera (focus)
 			cam_pos[0] = 0.0f;
-			cam_pos[1] = 0.1f;
-			//cam_pos[2] = 7.5f;
+			cam_pos[1] = 0.5f;
 			cam_yaw = 0.0f;
-			//p1->M = translate (identity_mat4(), pos_personaje[0]);
 			cam_moved = true;
 		}
 
@@ -231,11 +258,11 @@ int main(){
 		if (start){
 			cam_pos[2] -= 3.0*cam_speed * elapsed_seconds;
 			p1->M.m[14] -= 0.05f;
-			if (cam_pos[2]<-5.0f){ // largo
+			if (p1->M.m[14]<-45.0f){ //
 				cam_pos[0] = 0.0f;//reseteo de la camara
-				cam_pos[1] = 0.1f;
-				cam_pos[2] = 7.5f;
-				p1->M = translate (identity_mat4(), pos_personaje[0]);
+				cam_pos[1] = 0.5f;
+				cam_pos[2] = 1.55f;
+				p1->M = translate (identity_mat4(), vec3(0.0, 0.0, 0.0));
 				start = false;
 			}
 			cam_moved = true;
@@ -252,9 +279,9 @@ int main(){
 			velocityY -= gravity; //aumentamos la posicion con un valor que va disminuyendo
 			cam_pos[1] += velocityY;
 			p1->M.m[13] += velocityY;
-			if (cam_pos[1]<0.0f){
-				cam_pos[1] = 0.1;
-				p1->M.m[13] = -0.15;
+			if (p1->M.m[13]<0.0f){
+				cam_pos[1] = 0.5;
+				p1->M.m[13] = 0.0;
 				velocityY = 0.0;
 				jump = false;
 			}
@@ -262,7 +289,7 @@ int main(){
 		}
 
 		//printf("cam_pos2 = %f\n", cam_pos[2]);
-		//printf("M.m 13 eje y = %f\n", p1->M.m[13]);*/
+		//printf("M.m 13 eje z = %f\n", p1->M.m[14]);
 		// update view matrix
 		if (cam_moved) {
 			mat4 T = translate (identity_mat4 (), vec3 (-cam_pos[0], -cam_pos[1], -cam_pos[2])); // cam translation

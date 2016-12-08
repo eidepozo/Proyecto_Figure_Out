@@ -179,5 +179,9 @@ bool gameplay(float cam_speed, double elapsed_seconds, float *cam_pos, float *ca
 			*cam_yaw -= cam_yaw_speed * elapsed_seconds;
 			cam_moved = true;
 	}
+	/*printf("segundos pasados: %.2f\n", elapsed_seconds);
+	if(int(elapsed_seconds) % 5 == 0)*/
+	//printf("cam_pos2 = %f\n", cam_pos[2]);
+	//printf("cam_pos1 = %f\n", cam_pos[1]);
 	return cam_moved;
 }

@@ -11,7 +11,7 @@ using namespace std;
 
 personaje::personaje(char* filename):malla(filename){
 	vida = 3;
-    puntaje = 0;
+  puntaje = 0;
 }
 
 /*void personaje::moverse(){
@@ -37,4 +37,3 @@ void personaje::setvida(int vida){
 void personaje::setpuntaje(int puntaje){
 	this->puntaje = puntaje;
 }
-
