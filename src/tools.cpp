@@ -633,7 +633,7 @@ bool manejador_colisionesC(float px, float py, float pz, vec3 *pos_cor, int pvi,
 		float auxx = fabs(pos_cor[i].v[0] - px);
 		float auxy = fabs(pos_cor[i].v[1] - py);
 		float auxz = fabs(pos_cor[i].v[2] - pz);
-		if (auxz<0.15 -0.01 && auxz>0.09 -0.01 && auxx < 0.15 -0.01 && auxy<0.15-0.01){
+		if (auxz<0.09-0.05 && auxx <0.15 -0.01 && auxy<0.15-0.01){ //-0.05 magic number
 			printf("ColisionC \n");
 			return true;
 		}

@@ -279,12 +279,12 @@ int main(){
       /* Y cuando se colisiona con un corazon, la vida aumentara en 1, y el puntaje en 100, y se reinicia el estado de colC
       para los siguientes corazones*/
       if (colC){
-        auxp = p1->getpuntaje();
-        auxp = auxp + 100;
-        p1->setpuntaje(auxp);
         auxv = p1->getvida();
         auxv = auxv +1;
         p1->setvida(auxv);
+        auxp = p1->getpuntaje();
+        auxp = auxp + 100;
+        p1->setpuntaje(auxp);
         colC = false;
       }
 
