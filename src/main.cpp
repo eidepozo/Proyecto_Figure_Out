@@ -23,154 +23,101 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string>
-#include <time.h>
 #include "maths_funcs.h"
 #include "gl_utils.h"
 #include "tools.h"
-#include "piso.h"
-#include "personaje.h"
-#include "obstaculo.h"
-#include "moneda.h"
-#include "corazon.h"
 #include "malla.h"
+#include "personaje.h"
+#include <time.h>
 #define GL_LOG_FILE "log/gl.log"
 #define VERTEX_SHADER_FILE "shaders/test_vs.glsl"
 #define FRAGMENT_SHADER_FILE "shaders/test_fs.glsl"
+#define ONE_DEG_IN_RAD (2.0 * M_PI) / 360.0 // 0.017444444
 #define num_personajes 1
-#define num_obstaculos 8 //macros
+#define num_obstaculos 265 //macros 63 + 16
 #define num_piso 3
-#define num_monedas 1
+#define num_monedas 60
 #define num_corazones 1
 
-// keep track of window size for things like the viewport and the mouse cursor
+/* Llamadas a las respectivas funciones que definen la posicion de las mallas (ubicada en tools.cpp) */
+vec3* pos_obstaculos = ubica_obstaculos();
+vec3* pos_monedas = ubica_monedas();
+vec3* pos_piso = ubica_piso();
+vec3 * pos_corazones = ubica_corazones();
+
 int g_gl_width = 1280;
-int g_gl_height = 690;
+int g_gl_height = 720;
 GLFWwindow* g_window = NULL;
 
-/* Definicion previa de la ubicacion de los objetos */
-vec3 pos_obstaculos[] = {
-	vec3 (0.0, 0.0, -0.9),
-	vec3 (0.9, 0.0, -0.18),
-	vec3 (0.9, 0.0, -3.0), //aqui buscar como hacer que vayan vair
-	vec3 (0.6, 0.0, -6.0),
-	vec3 (-0.3, 0.0, -6.0),
-	vec3 (0.9, 0.0, -9.0),
-	vec3 (0.6, 0.0, -12.0),
-	vec3 (0.0, 0.0, -15.0)
-
-};
-
-vec3 pos_monedas[] = {
-	vec3(-1.65,-0.15,3.75)
-};
-
-vec3 pos_piso[] = {
-	vec3(0.0,0.0, 0.0),
-	vec3(0.0,0.0, -15.0),
-	vec3(0.0,0.0, -30.0)
-};
-
-/*vec3 pos_corazones[] = {
-	vec3(2.0,0.2,5.0)
-};
-
-vec3 pos_personaje[] = {
-	vec3(0.0,0.0,0.0)
-};*/
-
 int main(){
-	init(g_gl_width, g_gl_height); /* Define elementos basicos de OpenGL, se ubica en tools.cpp */
+  init_gl(g_gl_width, g_gl_height); /* Funcion que define parametros basicos de OpenGL (ubicada en tools.cpp) */
 
-	float x = 0.0f;
-	float y = 0.0f;
-	srand (static_cast <unsigned> (time(0)));
- 	x = -1.95 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(3.9)));
- 	y= -1.95 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(3.9)));
-	printf("numero random: %f\n %f\n", x, y);
+	GLuint shader_programme = create_programme_from_files (VERTEX_SHADER_FILE, FRAGMENT_SHADER_FILE);
 
-	/* Creacion de Objetos */
-	personaje *p1 = new personaje((char*)"mallas/personaje.obj");
-
-	obstaculo *o [num_obstaculos]; //arreglo de objetos tipo obstaculo
-	for (int i = 0; i < num_obstaculos; i++){
-		o[i] = new obstaculo((char*)"mallas/obstaculo.obj");
-	}
-
-	piso *f [num_piso]; //arreglo de objetos tipo piso
-	for(int i = 0; i < num_piso; i++){
-		f[i] = new piso((char*)"mallas/piso.obj");
-	}
-
-	moneda *m1 = new moneda((char*)"mallas/moneda.obj");
-  corazon *c1 = new corazon((char*)"mallas/corazon.obj");
-
-//-------------------------------CREATE SHADERS-------------------------------
-	GLuint shader_programme = create_programme_from_files (
-		VERTEX_SHADER_FILE, FRAGMENT_SHADER_FILE
-	);
-
-	int view_mat_location = glGetUniformLocation (shader_programme, "view");
-	int proj_mat_location = glGetUniformLocation (shader_programme, "proj");
-	int obj_mat_location = glGetUniformLocation(shader_programme,"obj");
-
-	#define ONE_DEG_IN_RAD (2.0 * M_PI) / 360.0 // 0.017444444
 	// input variables
-	float near = 0.1f; // clipping plane
-	float far = 100.0f; // clipping plane
-	float fov = 67.0f * ONE_DEG_IN_RAD; // convert 67 degrees to radians
-	float aspect = (float)g_gl_width / (float)g_gl_height; // aspect ratio
-	// matrix components
-	float range = tan (fov * 0.5f) * near;
-	float Sx = (2.0f * near) / (range * aspect + range * aspect);
-	float Sy = near / range;
-	float Sz = -(far + near) / (far - near);
-	float Pz = -(2.0f * far * near) / (far - near);
-	GLfloat proj_mat[] = {
-		Sx, 0.0f, 0.0f, 0.0f,
-		0.0f, Sy, 0.0f, 0.0f,
-		0.0f, 0.0f, Sz, -1.0f,
-		0.0f, 0.0f, Pz, 0.0f
-	};
+  mat4 pers_mat = perspective(67.0f, (float)g_gl_width / (float)g_gl_height, 0.1f, 100.0f);
+  mat4 ortho_mat = orthographic(-100, 100, 2.5, -2.5, -4, 4);
+  // para gameplay con camara
+  mat4 proj = pers_mat;
+  // para estatico, se ve mejor
+  // mat4 proj = ortho_mat;
 
-	float cam_speed = 1.0f; //1.0 unites per second
-	float cam_yaw_speed = 30.0f; // 30 degrees per second
-	float cam_pos[] = {0.0f, 0.5f, 1.55f}; // orig 0.0, 0.0, 5.0 - don't start at zero, or we will be too close
+	float cam_speed = 1.0f; // 1 unit per second
+	float cam_yaw_speed = 70.0f; // 70 degrees per second
+	float cam_pos[] = {0.0f, 0.5f, 1.55f}; //0.0, 0.0, 5.0 don't start at zero, or we will be too close 1.55
 	float cam_yaw = 0.0f; // y-rotation in degrees
 	mat4 T = translate (identity_mat4 (), vec3 (-cam_pos[0], -cam_pos[1], -cam_pos[2]));
 	mat4 R = rotate_y_deg (identity_mat4 (), -cam_yaw);
 	mat4 view_mat = R * T;
 
-	/* Variables auxiliares que permiten salto, inicio y pausa */
-	bool start = false;
-	bool jump = false;
+	/* Variables auxiliares que permiten controlar las interacciones del personaje con el entorno, y el flujo
+  del juego */
+	bool start, jump, colA, colB, colC = false;
 	float velocityY = 0.0f;
 	float gravity = 0.005f;
+	int auxp ,auxv, auxs = 0;
 
-/*---------------------------SET RENDERING DEFAULTS---------------------------*/
-	glUseProgram (shader_programme); // Installs a program object as part of current rendering state
+
+	int view_mat_location = glGetUniformLocation (shader_programme, "view");
+	glUseProgram (shader_programme);
 	glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view_mat.m);
-	glUniformMatrix4fv (proj_mat_location, 1, GL_FALSE, proj_mat);
-	//la instruccion de arriba nos permite pasar matrices al shader
+	int proj_mat_location = glGetUniformLocation (shader_programme, "proj");
+	glUseProgram (shader_programme);
+	glUniformMatrix4fv (proj_mat_location, 1, GL_FALSE, proj.m);
 
-	/* Ajustes en las matrices de cada objeto, cambio de ubicacion, scale, etc. */
-	p1->M = identity_mat4();
+  /* Creacion de Objetos */
+  personaje *p1 = new personaje((const char*)"mallas/personaje.obj", shader_programme, GL_TRIANGLES);
+	p1->load_texture("textures/personaje.png");
 
-	for(int i = 0; i < num_obstaculos; i++){
-		o[i]->M = translate(identity_mat4(), pos_obstaculos[i]);
-	}
+	malla *o1 = new malla((const char*)"mallas/obstaculo.obj", shader_programme, GL_TRIANGLES);
+	o1->load_texture("textures/obstaculo.jpg");
 
-	for(int i = 0; i < num_piso; i++){
-		f[i]->M = translate(identity_mat4(), pos_piso[i]);
-	}
+  malla *f1 = new malla((const char*)"mallas/piso.obj", shader_programme, GL_TRIANGLES);
+  f1->load_texture("textures/piso.jpg");
 
-	/*p1->M = translate (identity_mat4(), pos_personaje[0]);
-	for(int i = 0; i < num_obstaculos; i++){
-		o[i]->M = translate(identity_mat4(), pos_obstaculos[i]);
-	}
-	m1->M = translate (identity_mat4(), pos_monedas[0]);
-	c1->M = translate (identity_mat4(), pos_corazones[0]);
-	f1->M = scale (f1->M, vec3(5.0,0.0,15.0));
-	f1->M = translate (identity_mat4(), pos_piso[0]);*/
+  malla *m1 = new malla((const char*)"mallas/moneda.obj", shader_programme, GL_TRIANGLES);
+	m1->load_texture("textures/moneda.jpg");
+
+  malla *c1 = new malla((const char*)"mallas/corazon.obj", shader_programme, GL_TRIANGLES);
+	c1->load_texture("textures/corazon.jpg");
+
+  malla *w1 = new malla((const char*)"mallas/mundo.obj", shader_programme, GL_TRIANGLES);
+	w1->load_texture("textures/texture2.jpg");
+
+	/* Arreglo de matrices para cada objeto */
+	mat4 obst_mats[num_obstaculos];
+  mat4 mon_mats[num_monedas];
+  mat4 piso_mats[num_piso];
+  mat4 cor_mats[num_piso];
+
+  /* Traslacion de las matrices para el rendering */
+  //p1->M = translate (identity_mat4(), vec3(-0.29, 0.0, 0.0)); testing
+	for (int i = 0; i < num_obstaculos; i++) obst_mats[i] = translate (o1->M, pos_obstaculos[i]);
+	for (int i = 0; i < num_monedas; i++) mon_mats[i] = translate (m1->M, pos_monedas[i]);
+  for (int i = 0; i < num_piso; i++) piso_mats[i] = translate (f1->M, pos_piso[i]);
+  for (int i = 0; i < num_corazones; i++) cor_mats[i] = translate (c1->M, pos_corazones[i]);
+
+  printf("Proyecto Figure Out Ver. 1.2.3\nAutores: Elliot Ide Pozo, Adolfo Cañoles, Rodrigo Miranda.\n<Enter> para iniciar.\n<Esc> para salir.\n");
 
 	while (!glfwWindowShouldClose (g_window)) {
 		static double previous_seconds = glfwGetTime ();
@@ -182,42 +129,36 @@ int main(){
 		// wipe the drawing surface clear
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport (0, 0, g_gl_width, g_gl_height);
+		glUseProgram (shader_programme);
 
-		//glUseProgram (shader_programme);
-
-		//personaje, piso, obstaculos, moneda, corazon
-		glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, p1->M.m);
-    glBindVertexArray(p1->getvao());
-    glDrawArrays(GL_TRIANGLES,0,p1->getnumvertices());
-
-		for(int i = 0; i < num_obstaculos; i++){
-			glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, o[i]->M.m);
-			glBindVertexArray(o[i]->getvao());
-			glDrawArrays(GL_TRIANGLES,0,o[i]->getnumvertices());
-		}
-
-		for(int i = 0; i < num_piso; i++){
-			glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, f[i]->M.m);
-      glBindVertexArray(f[i]->getvao());
-      glDrawArrays(GL_TRIANGLES,0,f[i]->getnumvertices());
-		}
-
-		/*glUniformMatrix4fv (obj_mat_location, 1 ,GL_FALSE, m1->M.m);
-    glBindVertexArray(m1->getvao());
-    glDrawArrays(GL_TRIANGLES,0,m1->getnumvertices());*/
+    /* Rendering */
+    p1->render_indices();
+		for(int i = 0; i < num_obstaculos; i++) o1->render_indices(obst_mats[i]);
+		for(int i = 0; i < num_monedas; i++) m1->render_indices(mon_mats[i]);
+    for(int i = 0; i < num_piso; i++) f1->render_indices(piso_mats[i]);
+    for(int i = 0; i < num_corazones; i++) c1->render_indices(cor_mats[i]);
+		w1->render_indices();
 
 		// update other events like input handling
 		glfwPollEvents();
 
-		//llamada a funcion gameplay que controla a la camara2, se ubica en tools.cpp
-	  bool cam_moved = gameplay(cam_speed, elapsed_seconds, cam_pos, &cam_yaw, cam_yaw_speed);
+    /* Llamada a la funcion que controla a la "camara 2", (ubicada en tools.cpp) */
+    bool cam_moved = gameplay(cam_speed, elapsed_seconds, cam_pos, &cam_yaw, cam_yaw_speed);
 
-		/* Interaccion teclado con la camara1 */
-		if (glfwGetKey (g_window, GLFW_KEY_A)){
+    /* Interaccion teclado con la "camara 1" */
+
+    /* Cuando llego a uno de los extremos horizontales, paso hacia el extremo opuesto
+    perdiendo una vida*/
+		if (glfwGetKey (g_window, GLFW_KEY_A)){ //movimiento hacia la izda
 			if(start){
 				cam_pos[0] -= 3*cam_speed * elapsed_seconds;
 				p1->M.m[12] -= 0.05f;
+        //printf("p1->M.m[12] = %f\n", p1->M.m[12]); px
 				if (p1->M.m[12]< -2.10f && p1->M.m[12]> -2.25f){ //portal A <-
+					auxv = p1->getvida();
+					auxv = auxv - 1;
+					p1->setvida(auxv);
+					p1->estadoActual();
 					cam_pos[0] = 1.95f;
 					p1->M.m[12] = 1.95f;
 				}
@@ -225,11 +166,16 @@ int main(){
 			}
 		}
 
-		if (glfwGetKey (g_window, GLFW_KEY_D)){
+		if (glfwGetKey (g_window, GLFW_KEY_D)){//movimiento hacia la derecha
 			if(start){
 				cam_pos[0] += 3*cam_speed * elapsed_seconds;
 				p1->M.m[12] += 0.05f;
+        //printf("p1->M.m[12] = %f\n", p1->M.m[12]); px
 				if (p1->M.m[12]> 2.10f && p1->M.m[12]<2.25f){//portal B ->
+					auxv = p1->getvida();
+					auxv = auxv - 1;
+					p1->setvida(auxv);
+					p1->estadoActual();
 					cam_pos[0] = -1.95f;
 					p1->M.m[12] = -1.95f;
 				}
@@ -237,48 +183,150 @@ int main(){
 			}
 		}
 
-		//pausa
-		if (glfwGetKey (g_window, GLFW_KEY_P)) {
+    /* Movimientos auxiliares para testing */
+    /*if (glfwGetKey (g_window, GLFW_KEY_W)){//auxiliar
+      if(start){
+        p1->M.m[14] -= 0.075f;
+        printf("p1->M.m[14] = %f\n", p1->M.m[14]); //pz
+        cam_moved = true;
+    }
+
+    if (glfwGetKey (g_window, GLFW_KEY_S)){//auxiliar
+      //if(start){
+        p1->M.m[14] += 0.075f;
+        printf("p1->M.m[14] = %f\n", p1->M.m[14]); //pz
+        cam_moved = true;
+    }
+    */
+
+    /* Puedo pausar el juego, volviendo la variable de inicio (start) false, solo si
+    estoy en los margenes del eje z donde se puede jugar */
+		if (glfwGetKey (g_window, GLFW_KEY_P)){//pausa
 			if(start) start = false;
 			else if((!start) && p1->M.m[14]< 0.0f && p1->M.m[14]> -45.0f) start = true;
 		}
 
+    /* Reinicio los valores de la camara, si no se esta jugando, se incluye la posicion en el eje z*/
 		if (glfwGetKey (g_window, GLFW_KEY_F)){//update-camera (focus)
 			cam_pos[0] = 0.0f;
 			cam_pos[1] = 0.5f;
-			cam_yaw = 0.0f;
+      cam_yaw = 0.0f;
+      if(!start){
+        cam_pos[2] = 1.55f;
+      }
 			cam_moved = true;
 		}
 
-		//inicio
-		if (glfwGetKey (g_window, GLFW_KEY_ENTER)) {
+    /* Inicio del juego, las demas interacciones con teclado requieren que se realize esta interaccion primero */
+		if (glfwGetKey (g_window, GLFW_KEY_ENTER)){
 			if(!start) start = true;
 		}
 
+    /* Cuando el juego inicia, constantemente se analiza el estado del juego y del personaje */
 		if (start){
-			cam_pos[2] -= 3.0*cam_speed * elapsed_seconds;
-			p1->M.m[14] -= 0.05f;
-			if (p1->M.m[14]<-45.0f){ //
-				cam_pos[0] = 0.0f;//reseteo de la camara
+      /* El personaje se va desplazando por el eje z al igual que la camara, y su puntaje se va incrementando
+      y actualizando */
+			cam_pos[2] -= 4.5*cam_speed * elapsed_seconds;
+			p1->M.m[14] -= 0.075f; //0.075
+      //printf("p1->M.m[14] = %f\n", p1->M.m[14]); pz
+			auxp = p1->getpuntaje();
+			auxp += 1;
+      p1->estadoActual();
+			p1->setpuntaje(auxp);
+
+      /* Las colisiones se evaluan en 3 secciones de 15 unidades(largopiso/3) para disminuir el numero de
+      casos que se deben analizar a la vez.
+      Evaluamos en que seccion esta ubicado el personaje viendo su posicion en el eje z, y le entregamos a las funciones
+      que manejan las colisiones, su posicion en los 3 ejes, el arreglo de posiciones respectivo, con un rango que le
+      indica que casos se deben analizar */
+      if(p1->M.m[14]<=0.0f && p1->M.m[14]>=-15.0f){//seccion 1
+        colA = manejador_colisionesA(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_obstaculos, 0, 79);// pvf+1
+        colB = manejador_colisionesB(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_monedas, 0, 16);
+      } /*por ejemplo, aqui en el arreglo de obstaculos, los obstaculos que estan en el eje z entre 0 y -15
+      estan entre las posiciones 0 y 78 del arreglo (pobst)*/
+
+      else if(p1->M.m[14]<-15.0f && p1->M.m[14]>=-30.0f){//seccion 2
+        colA = manejador_colisionesA(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_obstaculos, 79, 175);
+        colB = manejador_colisionesB(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_monedas, 16, 41);
+        colC = manejador_colisionesC(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_corazones, 0, 1);
+      }
+
+      else if(p1->M.m[14]<-30.0f && p1->M.m[14]>=-45.0f){//seccion 3
+        colA = manejador_colisionesA(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_obstaculos, 175, 247);
+        colB = manejador_colisionesB(p1->M.m[12], p1->M.m[13], p1->M.m[14],pos_monedas, 41, 60);
+      }
+
+      /*Cuando ocurra una colision con un obstaculo (tipo A), la vida se disminuira en 1 y el puntaje volvera a 0,
+      lo que es diferente a cuando pasamos por un extremo y el juego sigue, las colisiones A, toman las
+      vidas como intentos del juego */
+      if (colA){
+        auxv = p1->getvida();
+        auxv = auxv - 1;
+        p1->setvida(auxv);
+        p1->setpuntaje(0);
+        p1->estadoActual();
+      }
+
+      /* Cuando hay una colision con una moneda (tipo B), el puntaje aumentara en 50, y se reinicia el estado de colB
+      para las siguientes monedas */
+      if (colB){
+        auxp = p1->getpuntaje();
+        auxp = auxp + 50;
+        p1->setpuntaje(auxp);
+        colB = false;
+      }
+
+      /* Y cuando se colisiona con un corazon, la vida aumentara en 1, y el puntaje en 100, y se reinicia el estado de colC
+      para los siguientes corazones*/
+      if (colC){
+        auxp = p1->getpuntaje();
+        auxp = auxp + 100;
+        p1->setpuntaje(auxp);
+        auxv = p1->getvida();
+        auxv = auxv +1;
+        p1->setvida(auxv);
+        colC = false;
+      }
+
+      /* Casos criticos: Si ocurre una colision tipo A, o termino el juego (posicion en el eje Z < -45)
+      , o no quedan vidas restantes*/
+			if (colA || p1->M.m[14]<-45.0f || p1->getvida()==0){
+      /* Para los 3 casos, pongo la camara en su posicion original, pero debo ver si estoy en un caso
+      que indica el termino del juego para reiniciar los valores propios del personaje*/
+        cam_pos[0] = 0.0f;
 				cam_pos[1] = 0.5f;
 				cam_pos[2] = 1.55f;
-				p1->M = translate (identity_mat4(), vec3(0.0, 0.0, 0.0));
+        if(p1->M.m[14]<-45.0f || p1->getvida()==0){//GAME OVER
+          printf("GAME OVER\n");
+          p1->setpuntaje(0);
+				  p1->setvida(3);
+          p1->setnsaltos(3);
+        }
+        /* Posteriormente, reinicio la posicion del personaje, el estado del juego y el estado de colA */
+        p1->M = translate (identity_mat4(), vec3(0.0, 0.0, 0.0));
 				start = false;
+        colA = false;
 			}
 			cam_moved = true;
 		}
 
-		//salto
-		if (glfwGetKey (g_window, GLFW_KEY_SPACE)) {
-			if(start && !jump){
+    /* Inicialmente tengo 3 saltos, cada vez que salte debo actualizar ese valor, ademas
+    solo puedo saltar si tengo saltos y si no estoy saltando ya mismo y si start es verdadero*/
+		if (glfwGetKey (g_window, GLFW_KEY_SPACE)){//salto
+      auxs = p1->getnsaltos();
+			if(start && !jump && auxs > 0){
 				jump = true;
-				velocityY = 0.1f; //orig 0.12f
+        auxs = auxs - 1;
+        //printf("nsaltos = %i\n", auxs);
+        p1->setnsaltos(auxs);
+				velocityY = 0.055;
 			}
 		}
+
 		if (jump){
-			velocityY -= gravity; //aumentamos la posicion con un valor que va disminuyendo
 			cam_pos[1] += velocityY;
 			p1->M.m[13] += velocityY;
+			velocityY -= gravity;
 			if (p1->M.m[13]<0.0f){
 				cam_pos[1] = 0.5;
 				p1->M.m[13] = 0.0;
@@ -287,24 +335,21 @@ int main(){
 			}
 			cam_moved = true;
 		}
-
-		//printf("cam_pos2 = %f\n", cam_pos[2]);
-		//printf("M.m 13 eje z = %f\n", p1->M.m[14]);
 		// update view matrix
-		if (cam_moved) {
-			mat4 T = translate (identity_mat4 (), vec3 (-cam_pos[0], -cam_pos[1], -cam_pos[2])); // cam translation
-			mat4 R = rotate_y_deg (identity_mat4 (), -cam_yaw); //
+		//printf("cam_pos2 = %f\n", cam_pos[2]);
+		if (cam_moved){
+      // cam translation
+			mat4 T = translate (identity_mat4(), vec3 (-cam_pos[0], -cam_pos[1], -cam_pos[2]));
+      mat4 R = rotate_y_deg(identity_mat4 (), -cam_yaw); //
 			mat4 view_mat = R * T;
-			glUniformMatrix4fv (view_mat_location, 1, GL_FALSE, view_mat.m);
+			glUniformMatrix4fv(view_mat_location, 1, GL_FALSE, view_mat.m);
 		}
-
 		if (GLFW_PRESS == glfwGetKey (g_window, GLFW_KEY_ESCAPE)) {
 			glfwSetWindowShouldClose (g_window, 1);
 		}
 		// put the stuff we've been drawing onto the display
 		glfwSwapBuffers (g_window);
 	}
-
 	// close GL context and any other GLFW resources
 	glfwTerminate();
 	return 0;

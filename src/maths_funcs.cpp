@@ -309,6 +309,7 @@ mat4 identity_mat4 () {
  3  7 11 15
 */
 
+
 vec4 mat4::operator* (const vec4& rhs) {
 	// 0x + 4y + 8z + 12w
 	float x =
@@ -590,6 +591,20 @@ mat4 perspective (float fovy, float aspect, float near, float far) {
 	m.m[10] = sz;
 	m.m[14] = pz;
 	m.m[11] = -1.0f;
+	return m;
+}
+
+// returns an orthographic projection style.
+mat4 orthographic(float near, float far, float top, float bot, float left, float right) {
+    mat4 m = zero_mat4();
+    m.m[0] = 2.0f / (right - left);
+    m.m[5] = 2.0f / (top - bot);
+    m.m[10] = -2.0f / (far - near);
+    m.m[12] = -(right + left) / (right - left);
+    m.m[13] = -(top + bot) / (top - bot);
+    m.m[14] = -(far + near) / (far - near);
+    m.m[15] = 1.0;
+	//return transpose(m);
 	return m;
 }
 

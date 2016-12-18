@@ -8,20 +8,22 @@ class personaje: public malla{
     private:
         int vida;
         int puntaje;
-        
+        int nsaltos;
+
     public:
-        personaje(char *filename);
+        personaje(const char *filename, GLuint shadprog, GLuint face_type);
         ~personaje();
-        void moverse();
-        void morir();
 
         // gets
         int getvida();
         int getpuntaje();
+        int getnsaltos();
 
         // sets
         void setvida(int vida);
-        void setpuntaje(int puntaje);        
+        void setpuntaje(int puntaje);
+        void setnsaltos(int nsaltos);
+        void estadoActual();
 };
 
 #endif

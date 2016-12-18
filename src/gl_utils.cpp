@@ -17,7 +17,7 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#define GL_LOG_FILE "gl.log"
+#define GL_LOG_FILE "log/gl.log"
 #define MAX_SHADER_LENGTH 262144
 
 /*--------------------------------LOG FUNCTIONS-------------------------------*/
