@@ -4,35 +4,34 @@ Etapa 2
 Ver. 1.2.3
 
 Autores: Rodrigo Miranda, Adolfo Cañoles, Elliot Ide
+
 Ultima actualizacion: 14/12/2016 01:06:21
 
 Librerias:
 - libglew-dev
 - libglfw3-dev
 - libassimp-dev
-- 
-/* -libasound-dev
-   -libopenal-dev 
-   -libalut-dev*/
+- ~~libasound-dev~~
+- ~~libopenal-dev~~
+- ~~libalut-dev~~
 
 Keys:
-+---------------------------------+	     
-|     Accion     |     Tecla      |
-+----------------+----------------+
-|    <Saltar>    |   Backspace    |
-|    <Inicio>    |     Enter      |
-|    <Pausa>     |       P        |  
-|    < <-- >     |       A	  |	
-|    < --> >     |       D        |  
-|   <updt-cam>   |       F        |
-+----------------+----------------+ 
+
+| Acción              | Tecla     |
+|---------------------|-----------|
+| Saltar            | Backspace |
+| Inicio            | Enter     |
+| Pausa             | P         |
+| Izquierda         | A         |
+| Derecha           | D         |
+| Actualizar cámara | R         |
 
 Modalidad de juego: Para iniciar aprete enter, y muevase hacia la derecha e izquierda con A y D respectivamente intentando evadir los obstaculos (cubos) y conseguir la mayor cantidad de monedas y vidas.
 
-Camara:
-Existen 2 "tipos" de camara en el juego:
-  -Camara 1: La camara que se utiliza en conjunto con la interaccion de teclado (source 11-texture-uv-mesh).
-  -Camara 2: La camara para desplazarse en el entorno, que utiliza parametros sen y cos (source 11-texture-uv-mesh).
+Cámara:
+Existen 2 "tipos" de cámara en el juego:
+  -Camara 1: La cámara que se utiliza en conjunto con la interaccion de teclado (source 11-texture-uv-mesh).
+  -Camara 2: La cámara para desplazarse en el entorno, que utiliza parametros sen y cos (source 11-texture-uv-mesh).
   	     Se controla con i,j,k,l (arriba, izda, dere, abajo) y el resto de las teclas siguen de la misma forma.
 
 **
